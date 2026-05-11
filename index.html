@@ -51,6 +51,36 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .rl-a{color:var(--blue2)}.rl-d{color:var(--pink)}
 .btn-arr{color:var(--text3);font-size:22px;line-height:1}
 
+/* ── PIN OVERLAY ── */
+#pinOverlay{position:fixed;inset:0;z-index:250;background:rgba(4,4,14,.92);
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
+#pinOverlay.show{display:flex}
+.pin-box{width:100%;max-width:300px;display:flex;flex-direction:column;align-items:center}
+.pin-av{width:68px;height:68px;border-radius:50%;background:rgba(59,130,246,.18);
+  border:1.5px solid rgba(59,130,246,.35);display:flex;align-items:center;
+  justify-content:center;font-size:28px;font-weight:800;color:var(--blue2);margin-bottom:14px;}
+.pin-title{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
+.pin-sub{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:26px}
+.pin-dots{display:flex;gap:14px;margin-bottom:28px}
+.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--border2);
+  transition:background .15s,transform .15s;}
+.pin-dot.filled{background:var(--blue2);transform:scale(1.18)}
+.pin-dot.err{background:var(--red)!important;transform:scale(1.18)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%}
+.pk{padding:17px 0;border-radius:15px;background:var(--card);border:0.5px solid var(--border2);
+  font-family:inherit;font-size:22px;font-weight:700;color:var(--text);
+  cursor:pointer;text-align:center;transition:all .12s;-webkit-tap-highlight-color:transparent;
+  user-select:none;}
+.pk:active{transform:scale(.92);background:var(--card2)}
+.pk.del{font-size:16px;color:var(--text2)}
+.pk.back-btn{background:transparent;border-color:transparent;font-size:13px;
+  font-weight:700;color:var(--text2);letter-spacing:.2px;}
+.pk.back-btn:active{transform:scale(.95);background:transparent}
+.pin-err{font-size:13px;color:var(--red);font-weight:700;margin-top:14px;
+  opacity:0;transition:opacity .2s;min-height:18px;text-align:center;}
+.pin-err.show{opacity:1}
+
 /* ── MAIN ── */
 #mainScreen{display:none;flex-direction:column}
 #mainScreen.show{display:flex}
@@ -201,7 +231,7 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   <div class="login-title">Shift Schedule</div>
   <div class="login-sub">Who's viewing today?</div>
   <div class="name-btns">
-    <div class="name-btn" onclick="login('anish')">
+    <div class="name-btn" onclick="startPin()">
       <div class="btn-av av-a">A</div>
       <div class="btn-inf">
         <div class="btn-nm">Anish</div>
@@ -217,6 +247,36 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
       </div>
       <div class="btn-arr">›</div>
     </div>
+  </div>
+</div>
+
+<!-- PIN OVERLAY -->
+<div id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-av">A</div>
+    <div class="pin-title">Enter Passcode</div>
+    <div class="pin-sub">Anish · Full access</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-grid">
+      <div class="pk" onclick="pinKey('1')">1</div>
+      <div class="pk" onclick="pinKey('2')">2</div>
+      <div class="pk" onclick="pinKey('3')">3</div>
+      <div class="pk" onclick="pinKey('4')">4</div>
+      <div class="pk" onclick="pinKey('5')">5</div>
+      <div class="pk" onclick="pinKey('6')">6</div>
+      <div class="pk" onclick="pinKey('7')">7</div>
+      <div class="pk" onclick="pinKey('8')">8</div>
+      <div class="pk" onclick="pinKey('9')">9</div>
+      <div class="pk back-btn" onclick="cancelPin()">Cancel</div>
+      <div class="pk" onclick="pinKey('0')">0</div>
+      <div class="pk del" onclick="pinDel()">⌫</div>
+    </div>
+    <div class="pin-err" id="pinErr">Incorrect passcode</div>
   </div>
 </div>
 
@@ -348,11 +408,9 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const shiftsRef = ref(db, 'shifts');
 
-// expose to global scope
 window._fbSet = (key, val) => set(ref(db, 'shifts/' + key), val);
 window._fbDelete = (key) => set(ref(db, 'shifts/' + key), null);
 
-// live listener — fires immediately + on every change
 onValue(shiftsRef, (snap) => {
   window._shifts = snap.val() || {};
   setSyncState('live');
@@ -385,13 +443,74 @@ const MONFULL=['January','February','March','April','May','June','July','August'
 const HOURS=[12,1,2,3,4,5,6,7,8,9,10,11];
 const MINS=[0,30];
 const APMM=['AM','PM'];
+const PIN_CODE = '2920';
 
 window._shifts = {};
 window._appReady = false;
 
 let cu='', wo=0, ek='', emode='', epreset='';
 let ss={h:12,m:0,ap:'AM'}, es={h:8,m:0,ap:'AM'};
+let pinBuffer = '';
 
+/* ── PIN ── */
+function startPin() {
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pinErr').classList.remove('show');
+  document.getElementById('pinOverlay').classList.add('show');
+  // use flex directly since we manage show via class + display
+  document.getElementById('pinOverlay').style.display = 'flex';
+}
+
+function cancelPin() {
+  pinBuffer = '';
+  document.getElementById('pinOverlay').style.display = 'none';
+  document.getElementById('pinOverlay').classList.remove('show');
+}
+
+function pinKey(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(checkPin, 120);
+  }
+}
+
+function pinDel() {
+  if (!pinBuffer.length) return;
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pinErr').classList.remove('show');
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('pd' + i);
+    dot.classList.toggle('filled', i < pinBuffer.length);
+    dot.classList.remove('err');
+  }
+}
+
+function checkPin() {
+  if (pinBuffer === PIN_CODE) {
+    document.getElementById('pinOverlay').style.display = 'none';
+    document.getElementById('pinOverlay').classList.remove('show');
+    login('anish');
+  } else {
+    // shake + error state
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('pd' + i).classList.add('err');
+    }
+    document.getElementById('pinErr').classList.add('show');
+    pinBuffer = '';
+    setTimeout(() => {
+      updatePinDots();
+    }, 700);
+  }
+}
+
+/* ── APP ── */
 function toKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function parseKey(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
 
@@ -629,6 +748,10 @@ window.pickP=pickP;
 window.pickOff=pickOff;
 window.saveShift=saveShift;
 window.renderWeek=renderWeek;
+window.startPin=startPin;
+window.cancelPin=cancelPin;
+window.pinKey=pinKey;
+window.pinDel=pinDel;
 </script>
 </body>
 </html>
