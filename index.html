@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shifts">
+<meta name="theme-color" content="#080810">
 <title>Shift Schedule</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap');
@@ -18,7 +22,6 @@
 body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:var(--text);
   min-height:100vh;width:100%;max-width:393px;margin:0 auto;overflow-x:hidden;padding-bottom:52px}
 
-/* ── SPLASH ── */
 #splash{position:fixed;inset:0;z-index:300;background:var(--bg);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 .splash-icon{font-size:48px;animation:pulse 1.6s ease-in-out infinite}
@@ -28,7 +31,6 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── LOGIN ── */
 #loginScreen{position:fixed;inset:0;z-index:200;background:var(--bg);
   display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
 .login-glow{width:88px;height:88px;border-radius:50%;background:rgba(59,130,246,.13);
@@ -51,11 +53,9 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .rl-a{color:var(--blue2)}.rl-d{color:var(--pink)}
 .btn-arr{color:var(--text3);font-size:22px;line-height:1}
 
-/* ── PIN OVERLAY ── */
 #pinOverlay{position:fixed;inset:0;z-index:250;background:rgba(4,4,14,.92);
   backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
   display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;}
-#pinOverlay.show{display:flex}
 .pin-box{width:100%;max-width:300px;display:flex;flex-direction:column;align-items:center}
 .pin-av{width:68px;height:68px;border-radius:50%;background:rgba(59,130,246,.18);
   border:1.5px solid rgba(59,130,246,.35);display:flex;align-items:center;
@@ -63,25 +63,21 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .pin-title{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
 .pin-sub{font-size:13px;color:var(--text2);font-weight:500;margin-bottom:26px}
 .pin-dots{display:flex;gap:14px;margin-bottom:28px}
-.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--border2);
-  transition:background .15s,transform .15s;}
+.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--border2);transition:background .15s,transform .15s;}
 .pin-dot.filled{background:var(--blue2);transform:scale(1.18)}
 .pin-dot.err{background:var(--red)!important;transform:scale(1.18)}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%}
 .pk{padding:17px 0;border-radius:15px;background:var(--card);border:0.5px solid var(--border2);
   font-family:inherit;font-size:22px;font-weight:700;color:var(--text);
-  cursor:pointer;text-align:center;transition:all .12s;-webkit-tap-highlight-color:transparent;
-  user-select:none;}
+  cursor:pointer;text-align:center;transition:all .12s;user-select:none;}
 .pk:active{transform:scale(.92);background:var(--card2)}
 .pk.del{font-size:16px;color:var(--text2)}
-.pk.back-btn{background:transparent;border-color:transparent;font-size:13px;
-  font-weight:700;color:var(--text2);letter-spacing:.2px;}
-.pk.back-btn:active{transform:scale(.95);background:transparent}
+.pk.back-btn{background:transparent;border-color:transparent;font-size:13px;font-weight:700;color:var(--text2);}
+.pk.back-btn:active{transform:scale(.95)}
 .pin-err{font-size:13px;color:var(--red);font-weight:700;margin-top:14px;
   opacity:0;transition:opacity .2s;min-height:18px;text-align:center;}
 .pin-err.show{opacity:1}
 
-/* ── MAIN ── */
 #mainScreen{display:none;flex-direction:column}
 #mainScreen.show{display:flex}
 
@@ -95,13 +91,21 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .vbadge{background:rgba(244,114,182,.12);color:var(--pink);border:0.5px solid rgba(244,114,182,.3);
   font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:.3px;
   text-transform:uppercase;display:none;}
-
-/* sync dot */
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
-  box-shadow:0 0 6px var(--green);transition:background .3s,box-shadow .3s;flex-shrink:0;}
-.sync-dot.syncing{background:var(--orange);box-shadow:0 0 6px var(--orange);animation:blink .6s ease-in-out infinite}
+  box-shadow:0 0 6px var(--green);transition:background .3s;flex-shrink:0;}
+.sync-dot.syncing{background:var(--orange);box-shadow:0 0 6px var(--orange);animation:blink .6s infinite}
 .sync-dot.offline{background:var(--red);box-shadow:0 0 6px var(--red)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* notification permission banner */
+.notif-banner{margin:0 20px 12px;background:rgba(59,130,246,.08);
+  border:0.5px solid rgba(59,130,246,.25);border-radius:13px;
+  padding:11px 14px;display:none;align-items:center;gap:10px;}
+.notif-banner.show{display:flex}
+.notif-banner-txt{flex:1;font-size:12px;font-weight:700;color:var(--blue2);line-height:1.4}
+.notif-allow{background:var(--blue);border:none;border-radius:8px;padding:7px 13px;
+  font-family:inherit;font-size:12px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;}
+.notif-allow:active{opacity:.8}
 
 .tz-bar{margin:2px 20px 12px;background:rgba(244,114,182,.07);border:0.5px solid rgba(244,114,182,.2);
   border-radius:11px;padding:9px 13px;font-size:12px;color:var(--pink);font-weight:700;
@@ -132,8 +136,7 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .bc{background:var(--teal)}.bof{background:var(--border2)}.bem{background:var(--border)}
 .dbody{flex:1;padding:13px 15px;display:flex;justify-content:space-between;align-items:center}
 .dleft .dn{font-size:16px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:7px}
-.ttag{font-size:10px;font-weight:800;background:var(--blue);color:#fff;
-  padding:2px 7px;border-radius:5px;letter-spacing:.3px;}
+.ttag{font-size:10px;font-weight:800;background:var(--blue);color:#fff;padding:2px 7px;border-radius:5px;letter-spacing:.3px;}
 .dleft .dd{font-size:12px;color:var(--text2);margin-top:3px;font-weight:500}
 .dright{text-align:right}
 .shlbl{font-size:14px;font-weight:700;letter-spacing:-.1px}
@@ -142,7 +145,15 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .shtime{font-size:12px;color:var(--text2);margin-top:3px;font-weight:500}
 .edh{font-size:10px;color:var(--text3);margin-top:3px;font-weight:700;letter-spacing:.2px}
 
-/* ── MODAL ── */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card2);border:0.5px solid var(--border2);border-radius:40px;
+  padding:11px 20px;font-size:13px;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:8px;opacity:0;transition:all .3s;
+  pointer-events:none;z-index:500;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.green{border-color:rgba(52,211,153,.3);color:var(--green)}
+.toast.red{border-color:rgba(248,113,113,.3);color:var(--red)}
+
 .mov{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(22px);
   -webkit-backdrop-filter:blur(22px);z-index:100;display:flex;align-items:flex-end;
   opacity:0;pointer-events:none;transition:opacity .22s;}
@@ -155,7 +166,6 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .mhd{padding:0 22px 14px;border-bottom:0.5px solid var(--border)}
 .mday{font-size:21px;font-weight:800;letter-spacing:-.4px}
 .msub{font-size:13px;color:var(--text2);margin-top:3px;font-weight:500}
-
 .prow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:14px 22px 10px}
 .pr{background:var(--card2);border:1px solid var(--border);border-radius:13px;
   padding:11px 6px;text-align:center;cursor:pointer;transition:all .15s;}
@@ -167,12 +177,9 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .prnm{font-size:11px;font-weight:800}
 .prnm.m{color:var(--orange)}.prnm.a{color:var(--blue2)}.prnm.n{color:var(--purple)}
 .prhr{font-size:10px;color:var(--text2);margin-top:2px;font-weight:600}
-
 .sdiv{height:0.5px;background:var(--border);margin:6px 22px 12px}
 .slbl{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;
   letter-spacing:.5px;padding:0 22px;margin-bottom:10px}
-
-/* DRUM */
 .ctw{display:flex;align-items:center;padding:0 18px;margin-bottom:14px;gap:0}
 .tcol{flex:1;display:flex;flex-direction:column;gap:5px}
 .tcol label{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;
@@ -185,8 +192,7 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .dscroll{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;width:100%;}
 .dscroll::-webkit-scrollbar{display:none}
 .di{height:32px;display:flex;align-items:center;justify-content:center;
-  font-size:17px;font-weight:700;scroll-snap-align:center;color:var(--text2);
-  cursor:pointer;letter-spacing:-.3px;}
+  font-size:17px;font-weight:700;scroll-snap-align:center;color:var(--text2);letter-spacing:-.3px;}
 .di.sel{color:var(--text);font-size:19px;font-weight:800}
 .drum::before,.drum::after{content:'';position:absolute;left:0;right:0;height:32px;z-index:2;pointer-events:none;}
 .drum::before{top:0;background:linear-gradient(to bottom,var(--card2),transparent)}
@@ -196,19 +202,16 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   pointer-events:none;z-index:1;border-radius:6px;}
 .dlbl{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;text-align:center;margin-top:2px}
 .colon{color:var(--text3);font-size:18px;font-weight:700;margin-bottom:14px}
-
 .offrow{padding:0 22px 12px}
 .offbtn{width:100%;padding:13px;background:var(--card2);border:1px solid var(--border);
   border-radius:13px;font-family:inherit;font-size:15px;font-weight:700;color:var(--text2);
   cursor:pointer;text-align:center;transition:all .15s;}
 .offbtn.soff{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
 .offbtn:active{transform:scale(.98)}
-
 .saverow{padding:0 22px}
 .savebtn{width:100%;padding:16px;background:var(--blue);border:none;border-radius:14px;
   font-family:inherit;font-size:17px;font-weight:800;color:#fff;cursor:pointer;
-  letter-spacing:-.2px;transition:all .15s;display:flex;align-items:center;
-  justify-content:center;gap:10px;}
+  letter-spacing:-.2px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:10px;}
 .savebtn:active{transform:scale(.98);opacity:.9}
 .savebtn .sbspin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
   border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
@@ -218,14 +221,12 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 </head>
 <body>
 
-<!-- SPLASH -->
 <div id="splash">
   <div class="splash-icon">📅</div>
   <div class="spin"></div>
   <div class="splash-txt">Connecting…</div>
 </div>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-glow">📅</div>
   <div class="login-title">Shift Schedule</div>
@@ -250,13 +251,12 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   </div>
 </div>
 
-<!-- PIN OVERLAY -->
 <div id="pinOverlay">
   <div class="pin-box">
     <div class="pin-av">A</div>
     <div class="pin-title">Enter Passcode</div>
     <div class="pin-sub">Anish · Full access</div>
-    <div class="pin-dots" id="pinDots">
+    <div class="pin-dots">
       <div class="pin-dot" id="pd0"></div>
       <div class="pin-dot" id="pd1"></div>
       <div class="pin-dot" id="pd2"></div>
@@ -280,7 +280,6 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   </div>
 </div>
 
-<!-- MAIN -->
 <div id="mainScreen">
   <div class="topbar">
     <div class="upill" onclick="logout()">
@@ -291,9 +290,15 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="sync-dot" id="syncDot" title="Live sync"></div>
+      <div class="sync-dot" id="syncDot"></div>
       <div class="vbadge" id="vbadge">View Only</div>
     </div>
+  </div>
+
+  <!-- Notification permission banner -->
+  <div class="notif-banner" id="notifBanner">
+    <div class="notif-banner-txt">🔔 Allow notifications to get shift reminders 6 hrs before</div>
+    <button class="notif-allow" onclick="requestNotifPermission()">Allow</button>
   </div>
 
   <div class="tz-bar" id="tzbar">🌏 Times shown in <strong style="margin-left:4px">India (IST) · UTC+5:30</strong></div>
@@ -311,7 +316,8 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
   <div class="dlist" id="dlist"></div>
 </div>
 
-<!-- MODAL -->
+<div class="toast" id="toast"></div>
+
 <div class="mov" id="mov">
   <div class="modal">
     <div class="mdrg"></div>
@@ -321,19 +327,13 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
     </div>
     <div class="prow">
       <div class="pr" id="pm" onclick="pickP('morning')">
-        <div class="prem">🌅</div>
-        <div class="prnm m">Morning</div>
-        <div class="prhr">12AM – 8AM</div>
+        <div class="prem">🌅</div><div class="prnm m">Morning</div><div class="prhr">12AM – 8AM</div>
       </div>
       <div class="pr" id="pa" onclick="pickP('afternoon')">
-        <div class="prem">☀️</div>
-        <div class="prnm a">Day</div>
-        <div class="prhr">8AM – 4PM</div>
+        <div class="prem">☀️</div><div class="prnm a">Day</div><div class="prhr">8AM – 4PM</div>
       </div>
       <div class="pr" id="pn" onclick="pickP('night')">
-        <div class="prem">🌙</div>
-        <div class="prnm n">Night</div>
-        <div class="prhr">4PM – 12AM</div>
+        <div class="prem">🌙</div><div class="prnm n">Night</div><div class="prhr">4PM – 12AM</div>
       </div>
     </div>
     <div class="sdiv"></div>
@@ -342,38 +342,20 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
       <div class="tcol">
         <label>Start</label>
         <div class="drumrow">
-          <div>
-            <div class="drum"><div class="dsel"></div><div class="dscroll" id="shds"></div></div>
-            <div class="dlbl">HR</div>
-          </div>
+          <div><div class="drum"><div class="dsel"></div><div class="dscroll" id="shds"></div></div><div class="dlbl">HR</div></div>
           <div class="colon">:</div>
-          <div>
-            <div class="drum"><div class="dsel"></div><div class="dscroll" id="smds"></div></div>
-            <div class="dlbl">MIN</div>
-          </div>
-          <div>
-            <div class="drum wide"><div class="dsel"></div><div class="dscroll" id="sads"></div></div>
-            <div class="dlbl">AM/PM</div>
-          </div>
+          <div><div class="drum"><div class="dsel"></div><div class="dscroll" id="smds"></div></div><div class="dlbl">MIN</div></div>
+          <div><div class="drum wide"><div class="dsel"></div><div class="dscroll" id="sads"></div></div><div class="dlbl">AM/PM</div></div>
         </div>
       </div>
       <div class="tsep">→</div>
       <div class="tcol">
         <label>End</label>
         <div class="drumrow">
-          <div>
-            <div class="drum"><div class="dsel"></div><div class="dscroll" id="ehds"></div></div>
-            <div class="dlbl">HR</div>
-          </div>
+          <div><div class="drum"><div class="dsel"></div><div class="dscroll" id="ehds"></div></div><div class="dlbl">HR</div></div>
           <div class="colon">:</div>
-          <div>
-            <div class="drum"><div class="dsel"></div><div class="dscroll" id="emds"></div></div>
-            <div class="dlbl">MIN</div>
-          </div>
-          <div>
-            <div class="drum wide"><div class="dsel"></div><div class="dscroll" id="eads"></div></div>
-            <div class="dlbl">AM/PM</div>
-          </div>
+          <div><div class="drum"><div class="dsel"></div><div class="dscroll" id="emds"></div></div><div class="dlbl">MIN</div></div>
+          <div><div class="drum wide"><div class="dsel"></div><div class="dscroll" id="eads"></div></div><div class="dlbl">AM/PM</div></div>
         </div>
       </div>
     </div>
@@ -392,7 +374,8 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcD7m2Vi45odb7RBVooHDPvgn4GmmlVWA",
@@ -404,31 +387,76 @@ const firebaseConfig = {
   appId: "1:1016034779401:web:c68c5e3a0210c648c273d8"
 };
 
+const VAPID_KEY = 'BKTMkXbgMU8JFYJ5mkL1olvX1RlwwxcXb0Ie3Wu-CCFoVRSVFS3w_I20YaMtjN-lwC-_qEd68u1K8ekhxHc7abA';
+
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 const shiftsRef = ref(db, 'shifts');
 
-window._fbSet = (key, val) => set(ref(db, 'shifts/' + key), val);
-window._fbDelete = (key) => set(ref(db, 'shifts/' + key), null);
+// Init messaging
+let messaging = null;
+try {
+  messaging = getMessaging(fbApp);
+} catch(e) {
+  console.warn('FCM not supported:', e);
+}
 
+window._fbSet = (key, val) => set(ref(db, 'shifts/' + key), val);
+window._fbSaveToken = (token) => set(ref(db, 'fcmTokens/' + token.slice(-20)), token);
+
+// Request notification permission + get FCM token
+window.requestNotifPermission = async function() {
+  if (!messaging) { showToast('Notifications not supported on this browser', 'red'); return; }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      // Register service worker first
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+      if (token) {
+        await window._fbSaveToken(token);
+        localStorage.setItem('fcm_token', token);
+        document.getElementById('notifBanner').classList.remove('show');
+        showToast('🔔 Notifications enabled!', 'green');
+        console.log('FCM Token:', token);
+      }
+    } else {
+      showToast('Notifications blocked', 'red');
+    }
+  } catch(e) {
+    console.error('FCM error:', e);
+    showToast('Could not enable notifications', 'red');
+  }
+};
+
+// Handle foreground messages
+if (messaging) {
+  onMessage(messaging, (payload) => {
+    const { title, body } = payload.notification || {};
+    showToast('🔔 ' + (body || title || 'Shift reminder!'), 'green');
+  });
+}
+
+// Check if already has permission
+window._checkNotifStatus = function() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    document.getElementById('notifBanner').classList.remove('show');
+  } else if (Notification.permission === 'default') {
+    document.getElementById('notifBanner').classList.add('show');
+  }
+};
+
+// Realtime DB listener
 onValue(shiftsRef, (snap) => {
   window._shifts = snap.val() || {};
-  setSyncState('live');
+  window._setSyncState('live');
   if (window._appReady) renderWeek();
   else showLogin();
 }, (err) => {
-  setSyncState('offline');
-  console.error(err);
+  window._setSyncState('offline');
   showLogin();
 });
-
-function setSyncState(s) {
-  window._syncState = s;
-  const dot = document.getElementById('syncDot');
-  if (!dot) return;
-  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : s === 'offline' ? ' offline' : '');
-}
-window._setSyncState = setSyncState;
 
 function showLogin() {
   document.getElementById('splash').style.display = 'none';
@@ -443,74 +471,66 @@ const MONFULL=['January','February','March','April','May','June','July','August'
 const HOURS=[12,1,2,3,4,5,6,7,8,9,10,11];
 const MINS=[0,30];
 const APMM=['AM','PM'];
-const PIN_CODE = '2920';
+const PIN_CODE='2920';
 
-window._shifts = {};
-window._appReady = false;
+window._shifts={};
+window._appReady=false;
 
-let cu='', wo=0, ek='', emode='', epreset='';
-let ss={h:12,m:0,ap:'AM'}, es={h:8,m:0,ap:'AM'};
-let pinBuffer = '';
+let cu='',wo=0,ek='',emode='',epreset='';
+let ss={h:12,m:0,ap:'AM'},es={h:8,m:0,ap:'AM'};
+let pinBuffer='';
 
-/* ── PIN ── */
-function startPin() {
-  pinBuffer = '';
-  updatePinDots();
+let toastTimer;
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(type?' '+type:'');
+  clearTimeout(toastTimer);void t.offsetWidth;
+  t.classList.add('show');
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+window.showToast=showToast;
+
+window._setSyncState=function(s){
+  const dot=document.getElementById('syncDot');if(!dot)return;
+  dot.className='sync-dot'+(s==='syncing'?' syncing':s==='offline'?' offline':'');
+};
+
+function startPin(){
+  pinBuffer='';updatePinDots();
   document.getElementById('pinErr').classList.remove('show');
-  document.getElementById('pinOverlay').classList.add('show');
-  // use flex directly since we manage show via class + display
-  document.getElementById('pinOverlay').style.display = 'flex';
+  document.getElementById('pinOverlay').style.display='flex';
 }
-
-function cancelPin() {
-  pinBuffer = '';
-  document.getElementById('pinOverlay').style.display = 'none';
-  document.getElementById('pinOverlay').classList.remove('show');
+function cancelPin(){
+  pinBuffer='';document.getElementById('pinOverlay').style.display='none';
 }
-
-function pinKey(d) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += d;
-  updatePinDots();
-  if (pinBuffer.length === 4) {
-    setTimeout(checkPin, 120);
-  }
+function pinKey(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;updatePinDots();
+  if(pinBuffer.length===4)setTimeout(checkPin,120);
 }
-
-function pinDel() {
-  if (!pinBuffer.length) return;
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots();
+function pinDel(){
+  if(!pinBuffer.length)return;
+  pinBuffer=pinBuffer.slice(0,-1);updatePinDots();
   document.getElementById('pinErr').classList.remove('show');
 }
-
-function updatePinDots() {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById('pd' + i);
-    dot.classList.toggle('filled', i < pinBuffer.length);
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('pd'+i);
+    dot.classList.toggle('filled',i<pinBuffer.length);
     dot.classList.remove('err');
   }
 }
-
-function checkPin() {
-  if (pinBuffer === PIN_CODE) {
-    document.getElementById('pinOverlay').style.display = 'none';
-    document.getElementById('pinOverlay').classList.remove('show');
+function checkPin(){
+  if(pinBuffer===PIN_CODE){
+    document.getElementById('pinOverlay').style.display='none';
     login('anish');
-  } else {
-    // shake + error state
-    for (let i = 0; i < 4; i++) {
-      document.getElementById('pd' + i).classList.add('err');
-    }
+  }else{
+    for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.add('err');
     document.getElementById('pinErr').classList.add('show');
-    pinBuffer = '';
-    setTimeout(() => {
-      updatePinDots();
-    }, 700);
+    pinBuffer='';setTimeout(updatePinDots,700);
   }
 }
 
-/* ── APP ── */
 function toKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function parseKey(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
 
@@ -568,7 +588,7 @@ function shiftMeta(key){
 }
 
 function login(name){
-  cu=name; wo=0; window._appReady=true;
+  cu=name;wo=0;window._appReady=true;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainScreen').classList.add('show');
   const av=document.getElementById('uav'),nm=document.getElementById('unm'),
@@ -577,6 +597,8 @@ function login(name){
   if(name==='anish'){
     av.className='uav av-a';av.textContent='A';nm.textContent='Anish';
     tz.textContent='Florida, USA (ET)';vb.style.display='none';tb.style.display='none';
+    // check notification permission for Anish
+    if(window._checkNotifStatus) window._checkNotifStatus();
   }else{
     av.className='uav av-d';av.textContent='D';nm.textContent='Divya';
     tz.textContent='India (IST)';vb.style.display='block';tb.style.display='flex';
@@ -585,9 +607,10 @@ function login(name){
 }
 
 function logout(){
-  cu=''; wo=0; window._appReady=false;
+  cu='';wo=0;window._appReady=false;
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainScreen').classList.remove('show');
+  document.getElementById('notifBanner').classList.remove('show');
 }
 
 function renderWeek(){
@@ -603,7 +626,6 @@ function renderWeek(){
   document.getElementById('wktitle').textContent=
     wo===0?'This Week':wo===1?'Next Week':wo===-1?'Last Week':(wo>0?('+'+wo+' Wks'):(wo+' Wks'));
   document.getElementById('tbtn').classList.toggle('show',wo!==0);
-
   const list=document.getElementById('dlist');list.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(ws.getDate()+i);
@@ -632,7 +654,6 @@ function renderWeek(){
 function changeWeek(d){wo+=d;renderWeek()}
 function goToday(){wo=0;renderWeek()}
 
-/* DRUM */
 function buildDrum(sid,items,sel,cb){
   const sc=document.getElementById(sid);sc.innerHTML='';
   const t=document.createElement('div');t.style.height='32px';sc.appendChild(t);
@@ -722,36 +743,27 @@ async function saveShift(){
   const btn=document.getElementById('savebtn');
   btn.classList.add('saving');
   window._setSyncState('syncing');
-
   let val;
   if(emode==='off'){val={off:true}}
   else if(emode==='preset'&&epreset){val={preset:epreset}}
   else{val={start:to24(ss.h,ss.m,ss.ap),end:to24(es.h,es.m,es.ap)}}
-
   try{
     await window._fbSet(ek,val);
+    showToast('✅ Shift saved!','green');
     closeModal();
   }catch(e){
-    alert('Save failed. Check your connection.');
+    showToast('❌ Save failed. Check connection.','red');
     window._setSyncState('offline');
   }finally{
     btn.classList.remove('saving');
   }
 }
 
-// expose for onclick
-window.login=login;
-window.logout=logout;
-window.changeWeek=changeWeek;
-window.goToday=goToday;
-window.pickP=pickP;
-window.pickOff=pickOff;
-window.saveShift=saveShift;
-window.renderWeek=renderWeek;
-window.startPin=startPin;
-window.cancelPin=cancelPin;
-window.pinKey=pinKey;
-window.pinDel=pinDel;
+window.login=login;window.logout=logout;
+window.changeWeek=changeWeek;window.goToday=goToday;
+window.pickP=pickP;window.pickOff=pickOff;window.saveShift=saveShift;
+window.renderWeek=renderWeek;window.startPin=startPin;
+window.cancelPin=cancelPin;window.pinKey=pinKey;window.pinDel=pinDel;
 </script>
 </body>
 </html>
