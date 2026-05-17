@@ -97,15 +97,27 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
 .sync-dot.offline{background:var(--red);box-shadow:0 0 6px var(--red)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* notification permission banner */
-.notif-banner{margin:0 20px 12px;background:rgba(59,130,246,.08);
-  border:0.5px solid rgba(59,130,246,.25);border-radius:13px;
+/* notification banner — color changes per user */
+.notif-banner{margin:0 20px 12px;border-radius:13px;
   padding:11px 14px;display:none;align-items:center;gap:10px;}
 .notif-banner.show{display:flex}
-.notif-banner-txt{flex:1;font-size:12px;font-weight:700;color:var(--blue2);line-height:1.4}
-.notif-allow{background:var(--blue);border:none;border-radius:8px;padding:7px 13px;
+.notif-banner.anish-banner{background:rgba(59,130,246,.08);border:0.5px solid rgba(59,130,246,.25);}
+.notif-banner.divya-banner{background:rgba(244,114,182,.08);border:0.5px solid rgba(244,114,182,.25);}
+.notif-banner-txt{flex:1;font-size:12px;font-weight:700;line-height:1.4}
+.anish-banner .notif-banner-txt{color:var(--blue2)}
+.divya-banner .notif-banner-txt{color:var(--pink)}
+.notif-allow{border:none;border-radius:8px;padding:7px 13px;
   font-family:inherit;font-size:12px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap;}
+.anish-banner .notif-allow{background:var(--blue)}
+.divya-banner .notif-allow{background:var(--pink)}
 .notif-allow:active{opacity:.8}
+
+/* already enabled indicator */
+.notif-on{margin:0 20px 12px;border-radius:13px;padding:9px 14px;
+  display:none;align-items:center;gap:8px;
+  background:rgba(52,211,153,.07);border:0.5px solid rgba(52,211,153,.2);}
+.notif-on.show{display:flex}
+.notif-on-txt{font-size:12px;font-weight:700;color:var(--green)}
 
 .tz-bar{margin:2px 20px 12px;background:rgba(244,114,182,.07);border:0.5px solid rgba(244,114,182,.2);
   border-radius:11px;padding:9px 13px;font-size:12px;color:var(--pink);font-weight:700;
@@ -295,10 +307,16 @@ body{font-family:'Nunito',-apple-system,sans-serif;background:var(--bg);color:va
     </div>
   </div>
 
-  <!-- Notification permission banner -->
+  <!-- Notification banner — shown for BOTH users if not yet allowed -->
   <div class="notif-banner" id="notifBanner">
-    <div class="notif-banner-txt">🔔 Allow notifications to get shift reminders 6 hrs before</div>
-    <button class="notif-allow" onclick="requestNotifPermission()">Allow</button>
+    <div class="notif-banner-txt" id="notifBannerTxt"></div>
+    <button class="notif-allow" id="notifAllowBtn" onclick="requestNotifPermission()">Allow</button>
+  </div>
+
+  <!-- Already enabled indicator -->
+  <div class="notif-on" id="notifOn">
+    <span>🔔</span>
+    <div class="notif-on-txt" id="notifOnTxt">Notifications enabled</div>
   </div>
 
   <div class="tz-bar" id="tzbar">🌏 Times shown in <strong style="margin-left:4px">India (IST) · UTC+5:30</strong></div>
@@ -391,72 +409,42 @@ const VAPID_KEY = 'BKTMkXbgMU8JFYJ5mkL1olvX1RlwwxcXb0Ie3Wu-CCFoVRSVFS3w_I20YaMtj
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
-const shiftsRef = ref(db, 'shifts');
 
-// Init messaging
 let messaging = null;
-try {
-  messaging = getMessaging(fbApp);
-} catch(e) {
-  console.warn('FCM not supported:', e);
-}
+try { messaging = getMessaging(fbApp); } catch(e) {}
 
-window._fbSet = (key, val) => set(ref(db, 'shifts/' + key), val);
-window._fbSaveToken = (token) => set(ref(db, 'fcmTokens/' + token.slice(-20)), token);
-
-// Request notification permission + get FCM token
-window.requestNotifPermission = async function() {
-  if (!messaging) { showToast('Notifications not supported on this browser', 'red'); return; }
+// Save FCM token tagged with username (anish / divya)
+window._saveToken = async function(username) {
+  if (!messaging) return;
   try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      // Register service worker first
-      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-      if (token) {
-        await window._fbSaveToken(token);
-        localStorage.setItem('fcm_token', token);
-        document.getElementById('notifBanner').classList.remove('show');
-        showToast('🔔 Notifications enabled!', 'green');
-        console.log('FCM Token:', token);
-      }
-    } else {
-      showToast('Notifications blocked', 'red');
+    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (token) {
+      // Save under tokens/anish or tokens/divya in Firebase
+      await set(ref(db, 'fcmTokens/' + username), token);
+      localStorage.setItem('fcm_token_' + username, token);
+      console.log(username + ' FCM token saved:', token);
     }
-  } catch(e) {
-    console.error('FCM error:', e);
-    showToast('Could not enable notifications', 'red');
-  }
+  } catch(e) { console.warn('Token save failed:', e); }
 };
 
-// Handle foreground messages
+window._fbSet = (key, val) => set(ref(db, 'shifts/' + key), val);
+
+// Foreground message handler
 if (messaging) {
   onMessage(messaging, (payload) => {
     const { title, body } = payload.notification || {};
-    showToast('🔔 ' + (body || title || 'Shift reminder!'), 'green');
+    window.showToast('🔔 ' + (body || title || 'Shift reminder!'), 'green');
   });
 }
 
-// Check if already has permission
-window._checkNotifStatus = function() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    document.getElementById('notifBanner').classList.remove('show');
-  } else if (Notification.permission === 'default') {
-    document.getElementById('notifBanner').classList.add('show');
-  }
-};
-
-// Realtime DB listener
-onValue(shiftsRef, (snap) => {
+// Realtime DB
+onValue(ref(db, 'shifts'), (snap) => {
   window._shifts = snap.val() || {};
   window._setSyncState('live');
   if (window._appReady) renderWeek();
   else showLogin();
-}, (err) => {
-  window._setSyncState('offline');
-  showLogin();
-});
+}, () => { window._setSyncState('offline'); showLogin(); });
 
 function showLogin() {
   document.getElementById('splash').style.display = 'none';
@@ -495,14 +483,64 @@ window._setSyncState=function(s){
   dot.className='sync-dot'+(s==='syncing'?' syncing':s==='offline'?' offline':'');
 };
 
+/* ── NOTIFICATION BANNER ── */
+function updateNotifBanner(username) {
+  const banner = document.getElementById('notifBanner');
+  const bannerTxt = document.getElementById('notifBannerTxt');
+  const allowBtn = document.getElementById('notifAllowBtn');
+  const notifOn = document.getElementById('notifOn');
+  const notifOnTxt = document.getElementById('notifOnTxt');
+
+  // hide both first
+  banner.classList.remove('show');
+  notifOn.classList.remove('show');
+
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'granted') {
+    // Already allowed — show green confirmed state
+    notifOn.classList.add('show');
+    notifOnTxt.textContent = username === 'anish'
+      ? '🔔 Notifications enabled — you\'ll be alerted 6 hrs before shift'
+      : '🔔 Notifications enabled — Divya will be alerted 6 hrs before shift';
+    // Re-save token in case it changed
+    if (window._saveToken) window._saveToken(username);
+  } else if (Notification.permission === 'default') {
+    // Not yet asked — show allow banner
+    banner.classList.add('show');
+    if (username === 'anish') {
+      banner.className = 'notif-banner show anish-banner';
+      bannerTxt.textContent = '🔔 Allow notifications to get shift reminders 6 hrs before';
+      allowBtn.style.background = 'var(--blue)';
+    } else {
+      banner.className = 'notif-banner show divya-banner';
+      bannerTxt.textContent = '🔔 Allow to get Anish\'s shift reminders in India time';
+      allowBtn.style.background = 'var(--pink)';
+    }
+  }
+  // if 'denied' — show nothing, can't do anything
+}
+
+window.requestNotifPermission = async function() {
+  if (!('Notification' in window)) { showToast('Not supported on this browser', 'red'); return; }
+  const permission = await Notification.requestPermission();
+  if (permission === 'granted') {
+    document.getElementById('notifBanner').classList.remove('show');
+    if (window._saveToken) await window._saveToken(cu);
+    updateNotifBanner(cu);
+    showToast('🔔 Notifications enabled!', 'green');
+  } else {
+    showToast('Notifications blocked — enable in phone Settings', 'red');
+  }
+};
+
+/* ── PIN ── */
 function startPin(){
   pinBuffer='';updatePinDots();
   document.getElementById('pinErr').classList.remove('show');
   document.getElementById('pinOverlay').style.display='flex';
 }
-function cancelPin(){
-  pinBuffer='';document.getElementById('pinOverlay').style.display='none';
-}
+function cancelPin(){pinBuffer='';document.getElementById('pinOverlay').style.display='none';}
 function pinKey(d){
   if(pinBuffer.length>=4)return;
   pinBuffer+=d;updatePinDots();
@@ -516,14 +554,12 @@ function pinDel(){
 function updatePinDots(){
   for(let i=0;i<4;i++){
     const dot=document.getElementById('pd'+i);
-    dot.classList.toggle('filled',i<pinBuffer.length);
-    dot.classList.remove('err');
+    dot.classList.toggle('filled',i<pinBuffer.length);dot.classList.remove('err');
   }
 }
 function checkPin(){
   if(pinBuffer===PIN_CODE){
-    document.getElementById('pinOverlay').style.display='none';
-    login('anish');
+    document.getElementById('pinOverlay').style.display='none';login('anish');
   }else{
     for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.add('err');
     document.getElementById('pinErr').classList.add('show');
@@ -531,40 +567,31 @@ function checkPin(){
   }
 }
 
+/* ── UTILS ── */
 function toKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function parseKey(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
-
 function weekStart(offset){
   const t=new Date();t.setHours(0,0,0,0);
-  const dow=t.getDay();
-  const sinceF=(dow>=5)?(dow-5):(dow+2);
-  const f=new Date(t);f.setDate(t.getDate()-sinceF+offset*7);
-  return f;
+  const dow=t.getDay();const sinceF=(dow>=5)?(dow-5):(dow+2);
+  const f=new Date(t);f.setDate(t.getDate()-sinceF+offset*7);return f;
 }
-
 function etOff(k){
   const d=parseKey(k),y=d.getFullYear();
-  const mar=new Date(y,2,1),nov=new Date(y,10,1);
-  const dst=new Date(y,2,1+((7-mar.getDay()+0)%7)+7);
-  const end=new Date(y,10,1+(7-nov.getDay())%7);
+  const dst=new Date(y,2,1+((7-new Date(y,2,1).getDay()+0)%7)+7);
+  const end=new Date(y,10,1+(7-new Date(y,10,1).getDay())%7);
   const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate());
   return(dd>=dst&&dd<end)?-240:-300;
 }
-
 function etToIst(t,k){
   const[hh,mm]=t.split(':').map(Number);
-  const utc=hh*60+mm-etOff(k);
-  const ist=((utc+330)%1440+1440)%1440;
+  const ist=((hh*60+mm-etOff(k)+330)%1440+1440)%1440;
   return String(Math.floor(ist/60)).padStart(2,'0')+':'+String(ist%60).padStart(2,'0');
 }
-
 function fmt12(t){
-  if(!t)return'';
-  const[hh,mm]=t.split(':').map(Number);
+  if(!t)return'';const[hh,mm]=t.split(':').map(Number);
   const ap=hh<12?'AM':'PM';const h=hh%12||12;
   return h+':'+(mm?String(mm).padStart(2,'0'):'00')+'\u202F'+ap;
 }
-
 function to24(h,m,ap){let hh=h%12;if(ap==='PM')hh+=12;return String(hh).padStart(2,'0')+':'+String(m).padStart(2,'0')}
 function from24(t){const[hh,mm]=t.split(':').map(Number);return{h:hh%12||12,m:mm,ap:hh<12?'AM':'PM'}}
 
@@ -587,6 +614,7 @@ function shiftMeta(key){
   return{label,cls,bar,time:fmt12(s24)+'–'+fmt12(e24)};
 }
 
+/* ── LOGIN ── */
 function login(name){
   cu=name;wo=0;window._appReady=true;
   document.getElementById('loginScreen').style.display='none';
@@ -597,12 +625,12 @@ function login(name){
   if(name==='anish'){
     av.className='uav av-a';av.textContent='A';nm.textContent='Anish';
     tz.textContent='Florida, USA (ET)';vb.style.display='none';tb.style.display='none';
-    // check notification permission for Anish
-    if(window._checkNotifStatus) window._checkNotifStatus();
   }else{
     av.className='uav av-d';av.textContent='D';nm.textContent='Divya';
     tz.textContent='India (IST)';vb.style.display='block';tb.style.display='flex';
   }
+  // Show notification banner for BOTH users
+  updateNotifBanner(name);
   renderWeek();
 }
 
@@ -611,13 +639,14 @@ function logout(){
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainScreen').classList.remove('show');
   document.getElementById('notifBanner').classList.remove('show');
+  document.getElementById('notifOn').classList.remove('show');
 }
 
+/* ── RENDER ── */
 function renderWeek(){
   if(!cu)return;
   const ws=weekStart(wo);
-  const today=new Date();today.setHours(0,0,0,0);
-  const tk=toKey(today);
+  const today=new Date();today.setHours(0,0,0,0);const tk=toKey(today);
   const we=new Date(ws);we.setDate(ws.getDate()+6);
   const sm=ws.getMonth()===we.getMonth();
   document.getElementById('wkrange').textContent=
@@ -654,6 +683,7 @@ function renderWeek(){
 function changeWeek(d){wo+=d;renderWeek()}
 function goToday(){wo=0;renderWeek()}
 
+/* ── DRUMS ── */
 function buildDrum(sid,items,sel,cb){
   const sc=document.getElementById(sid);sc.innerHTML='';
   const t=document.createElement('div');t.style.height='32px';sc.appendChild(t);
@@ -676,13 +706,11 @@ function buildDrum(sid,items,sel,cb){
     },80);
   },{passive:true});
 }
-
 function clearP(){
   ['pm','pa','pn'].forEach(id=>document.getElementById(id).className='pr');
   document.getElementById('offbtn').classList.remove('soff');
   emode='custom';epreset='';
 }
-
 function initDrums(sh,sm,sap,eh,em,eap){
   ss={h:sh,m:sm,ap:sap};es={h:eh,m:em,ap:eap};
   buildDrum('shds',HOURS,sh,v=>{ss.h=v;clearP()});
@@ -692,7 +720,6 @@ function initDrums(sh,sm,sap,eh,em,eap){
   buildDrum('emds',MINS,em,v=>{es.m=v;clearP()});
   buildDrum('eads',APMM,eap,v=>{es.ap=v;clearP()});
 }
-
 function openModal(d,key){
   ek=key;emode='';epreset='';
   document.getElementById('mday').textContent=DFULL[d.getDay()]+', '+d.getDate()+' '+MONFULL[d.getMonth()];
@@ -711,7 +738,6 @@ function openModal(d,key){
   }else initDrums(12,0,'AM',8,0,'AM');
   document.getElementById('mov').classList.add('open');
 }
-
 function pickPresetSel(name){
   emode='preset';epreset=name;
   document.getElementById('pm').className='pr'+(name==='morning'?' sm':'');
@@ -719,44 +745,37 @@ function pickPresetSel(name){
   document.getElementById('pn').className='pr'+(name==='night'?' sn':'');
   document.getElementById('offbtn').classList.remove('soff');
 }
-
 function pickP(name){
   pickPresetSel(name);
   const p=PSETS[name],s=from24(p.s),e=from24(p.e);
-  initDrums(s.h,s.m,s.ap,e.h,e.m,e.ap);
-  pickPresetSel(name);
+  initDrums(s.h,s.m,s.ap,e.h,e.m,e.ap);pickPresetSel(name);
 }
-
 function pickOff(silent){
   emode='off';epreset='';
   ['pm','pa','pn'].forEach(id=>document.getElementById(id).className='pr');
   document.getElementById('offbtn').classList.add('soff');
 }
-
 function closeModal(){document.getElementById('mov').classList.remove('open')}
 document.getElementById('mov').addEventListener('click',e=>{
   if(e.target===document.getElementById('mov'))closeModal();
 });
 
+/* ── SAVE ── */
 async function saveShift(){
   if(!ek)return;
   const btn=document.getElementById('savebtn');
-  btn.classList.add('saving');
-  window._setSyncState('syncing');
+  btn.classList.add('saving');window._setSyncState('syncing');
   let val;
   if(emode==='off'){val={off:true}}
   else if(emode==='preset'&&epreset){val={preset:epreset}}
   else{val={start:to24(ss.h,ss.m,ss.ap),end:to24(es.h,es.m,es.ap)}}
   try{
     await window._fbSet(ek,val);
-    showToast('✅ Shift saved!','green');
-    closeModal();
+    showToast('✅ Shift saved!','green');closeModal();
   }catch(e){
     showToast('❌ Save failed. Check connection.','red');
     window._setSyncState('offline');
-  }finally{
-    btn.classList.remove('saving');
-  }
+  }finally{btn.classList.remove('saving');}
 }
 
 window.login=login;window.logout=logout;
